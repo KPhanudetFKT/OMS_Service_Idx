@@ -1,0 +1,74 @@
+service	dep_name	kind	env_var	target
+# TARGETS ARE SIT-INFERRED FROM CONFIG (.env / config.yaml, June 2026). VERIFY & REPLACE per the environment you are testing.
+# kind ∈ http-service|external-api|search|payment-gateway|mysql|mssql|mongo|redis|kafka|other. target = host[:port] or URL. Lines starting with # are ignored.
+# ---- oms-services-order ---- (config used placeholders like "product-service-host"; hosts below inferred from sibling services)
+oms-services-order	product	http-service	APP_PRODUCTDSN	sit-internal-api.freshket.co:443
+oms-services-order	orderadapter	http-service	APP_ORDERADAPTERDSN	sit-internal-api.freshket.co:443
+oms-services-order	promotion	http-service	APP_PROMOTIONDSN	sit-internal-api.freshket.co:443
+oms-services-order	fulfillment	http-service	APP_FULFILLMENTDSN	sit-internal-api.freshket.co:443
+oms-services-order	order-self	http-service	APP_ORDERDSN	sit-internal-api.freshket.co:443
+oms-services-order	recommendation	http-service	APP_RECOMMENDDSN	sit-internal-api.freshket.co:443
+oms-services-order	customer	http-service	APP_CUSTOMERDSN	sit-internal-api.freshket.co:443
+oms-services-order	fk-web-legacy	http-service	APP_LEGACYWEBMVCDSN	dev.freshket.co:443
+oms-services-order	billing	http-service	APP_BILLINGDSN	sit-internal-api.freshket.co:443
+oms-services-order	hrms	http-service	APP_HRMSURL	sit-public-api.freshket.co:443
+oms-services-order	lms	http-service	LMS_HOST	sit-internal-api.freshket.co:443
+oms-services-order	mysql	mysql	MYSQL_HOST	nonprod-db-oms.freshket.co:3306
+oms-services-order	mssql	mssql	MSSQL_HOST	freshket-dev-mssql.cth9muhntj72.ap-southeast-1.rds.amazonaws.com:1433
+oms-services-order	kafka	kafka	KAFKA_BROKERS	pkc-l9wvm.ap-southeast-1.aws.confluent.cloud:9092
+oms-services-order	growthbook	external-api	APP_GROWTHBOOKURL	growthbook-api.freshket.co:443
+oms-services-order	google-maps	external-api	APP_GOOGLEMAPSBASEURL	maps.googleapis.com:443
+oms-services-order	line-notify	external-api	APP_LINEAPITOKEN	notify-api.line.me:443
+# ---- oms-services-product ----
+oms-services-product	recommendation	http-service	APP_RECOMMENDDSN	sit-internal-api.freshket.co:443
+oms-services-product	promotion	http-service	APP_PROMOTIONDNS	sit-internal-api.freshket.co:443
+oms-services-product	product-sync	http-service	APP_PRODUCTSYNCDSN	sit-internal-api.freshket.co:443
+oms-services-product	hrms	http-service	APP_HRMSDSN	sit-public-api.freshket.co:443
+oms-services-product	legacy-oms-api	http-service	APP_LEGACYWEBMVCDSN	dev.freshket.co:443
+oms-services-product	thai-tokenizer	external-api	APP_THAITOKENIZERURL	sit-internal-api.freshket.co:443
+oms-services-product	growthbook	external-api	FEATUREFLAGDSN	growthbook-api.freshket.co:443
+oms-services-product	mysql	mysql	MYSQL_HOST	nonprod-db-oms.freshket.co:3306
+oms-services-product	mssql	mssql	MSSQL_HOST	freshket-dev-mssql.cth9muhntj72.ap-southeast-1.rds.amazonaws.com:1433
+oms-services-product	kafka	kafka	KAFKA_BROKERS	pkc-l9wvm.ap-southeast-1.aws.confluent.cloud:9092
+oms-services-product	opensearch	search	ELASTICSEARCH_HOSTS	vpc-opensearch-dev-mayb7subwmcawieuafcraoxdqi.ap-southeast-1.es.amazonaws.com:443
+oms-services-product	algolia	search	ALGOLIA_APPLICATIONID	SZL3OSUPY1-dsn.algolia.net:443
+oms-services-product	braze	external-api	BRAZE_URL	rest.iad-07.braze.com:443
+oms-services-product	redis	redis	CACHE_ADDRESS	freshket-dev-redis.cxl6tt.ng.0001.apse1.cache.amazonaws.com:6379
+# ---- oms-services-content ----
+oms-services-content	product	http-service	APP_PRODUCTDSN	sit-internal-api.freshket.co:443
+oms-services-content	recommendation	http-service	APP_RECOMMENDDSN	sit-internal-api.freshket.co:443
+oms-services-content	hrms	http-service	APP_HRMSDSN	sit-public-api.freshket.co:443
+oms-services-content	growthbook	external-api	APP_FEATUREFLAGDSN	dev-growthbook-api.freshket.co:443
+oms-services-content	mongo	mongo	MONGO_HOSTNAME	freshket-lynx-dev0.d0i3p.mongodb.net:27017
+oms-services-content	kafka	kafka	KAFKA_BROKERS	pkc-l9wvm.ap-southeast-1.aws.confluent.cloud:9092
+# ---- oms-service-payment ----
+oms-service-payment	order-public	http-service	THIRDPARTY_ORDERAPI_ORDERDSN	sit-oms.freshket.co:443
+oms-service-payment	order-internal	http-service	THIRDPARTY_ORDERAPI_INTERNALORDERDSN	sit-internal-api.freshket.co:443
+oms-service-payment	crm-customer	http-service	THIRDPARTY_CRMCUSTOMERAPI_CRMCUSTOMERDSN	sit-external-api.freshket.co:443
+oms-service-payment	billing-finance	http-service	THIRDPARTY_BILLINGCONFIG_FINANCEDSN	sit-finance.freshket.co:443
+oms-service-payment	legacy-payment-api	external-api	THIRDPARTY_LEGACYPAYMENTAPI_HOST	sit-api.freshket.co:443
+oms-service-payment	hrms	http-service	APP_HRMSURL	sit-public-api.freshket.co:443
+oms-service-payment	julian-hybrid	http-service	APP_JULIANBASEURL	dev-hybrid.freshket.co:443
+oms-service-payment	growthbook	external-api	THIREDPARTY_FEATUREFLAGDSN	growthbook-api.freshket.co:443
+oms-service-payment	mysql	mysql	MYSQL_HOST	nonprod-db-oms.freshket.co:3306
+oms-service-payment	mssql	mssql	MSSQL_HOST	freshket-dev-mssql.cth9muhntj72.ap-southeast-1.rds.amazonaws.com:1433
+oms-service-payment	kafka	kafka	KAFKA_BROKERS	pkc-l9wvm.ap-southeast-1.aws.confluent.cloud:9092
+oms-service-payment	omise	payment-gateway	THIRDPARTY_APPOMISE_BASEURL	api.omise.co:443
+oms-service-payment	kbank	payment-gateway	THIRDPARTY_APPKBANKCONFIG_BASEURL	rt05.kasikornbank.com:443
+oms-service-payment	ttb-2c2p-paco	payment-gateway	THIRDPARTY_TTB_BASEURL	core.demo-paco.2c2p.com:443
+# ---- oms-services (mono: workers + internal/external HTTP) ----
+oms-services	hrms	http-service	APP_HRMSDSN	sit-public-api.freshket.co:443
+oms-services	auth	http-service	AUTH_ENDPOINT	dev.freshket.co:443
+oms-services	promotion-workers	http-service	PROMOTION_SYNC_URL	sit-external-api.freshket.co:443
+oms-services	recommendation	http-service	RECOMMENDATION_URL	sit-internal-api.freshket.co:443
+oms-services	lms	http-service	LMS_HOST	sit-internal-api.freshket.co:443
+oms-services	thai-tokenizer	external-api	THAI_TOKENIZER_URL	sit-internal-api.freshket.co:443
+oms-services	growthbook	external-api	APP_GROWTHBOOKURL	growthbook-api.freshket.co:443
+oms-services	braze	external-api	BRAZE_HOST	rest.iad-07.braze.com:443
+oms-services	mysql	mysql	MYSQL_HOST	nonprod-db-oms.freshket.co:3306
+oms-services	mssql	mssql	MSSQL_HOST	freshket-dev-mssql.cth9muhntj72.ap-southeast-1.rds.amazonaws.com:1433
+oms-services	redis	redis	REDIS_HOST	freshket-oms-otp-sit.cxl6tt.ng.0001.apse1.cache.amazonaws.com:6379
+oms-services	kafka	kafka	KAFKA_BROKERS	pkc-l9wvm.ap-southeast-1.aws.confluent.cloud:9092
+oms-services	opensearch	search	ELASTICSEARCH_URL	vpc-opensearch-dev-mayb7subwmcawieuafcraoxdqi.ap-southeast-1.es.amazonaws.com:443
+oms-services	algolia	search	ALGOLIA_APP_ID	SZL3OSUPY1-dsn.algolia.net:443
+oms-services	product-sync-sqs	other	PRODUCT_SYNC_QUEUE_NAME	sqs.ap-southeast-1.amazonaws.com:443

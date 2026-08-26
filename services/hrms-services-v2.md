@@ -24,7 +24,7 @@ Not confirmed from available inspection. Confidence: Unknown.
 None confirmed.
 
 ## Important Files
-Not explored in detail. Directory exists at `/Users/freshket/projects/hrms-services-v2/`.
+Not explored in detail. Directory exists at `~/projects/hrms-services-v2/` (repo: `hrms-services-v2`).
 
 ## Services That Depend on HRMS
 | Service | Env Var | Usage |

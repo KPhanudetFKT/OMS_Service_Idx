@@ -1,0 +1,603 @@
+<title>Freshket Endpoint Dependency Graph — Order · Product · Payment · Content</title>
+<style>
+  :root{
+    --bg:#eef1f5; --panel:#ffffff; --panel-2:#f6f8fb;
+    --ink:#161b25; --ink-2:#475067; --ink-3:#7e889c;
+    --line:#dde3ec; --line-2:#c8d1df;
+    --order:#2563eb; --product:#0d9488; --payment:#d4790b; --content:#7c3aed;
+    --ext:#64748b; --db:#8a93a6;
+    --hi:#dc2626; --mid:#e0930a; --lo:#1f9d57;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    -webkit-font-smoothing:antialiased;font-size:15px}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 28px 96px}
+  a{color:var(--order)}
+
+  /* ---------- header ---------- */
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:30px}
+  .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 12px}
+  h1{font-size:clamp(26px,4vw,40px);line-height:1.08;margin:0;font-weight:760;letter-spacing:-.018em;
+    text-wrap:balance;max-width:20ch}
+  .lede{color:var(--ink-2);max-width:68ch;margin:14px 0 0;font-size:16px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:18px;font-family:var(--mono);
+    font-size:12px;color:var(--ink-3)}
+  .meta b{color:var(--ink-2);font-weight:600}
+
+  /* ---------- generic section ---------- */
+  section{margin-top:46px}
+  .h2{display:flex;align-items:baseline;gap:14px;margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid var(--line-2)}
+  .h2 .n{font-family:var(--mono);font-size:13px;color:var(--ink-3);font-weight:600}
+  .h2 h2{font-size:21px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .h2 .sub{font-size:13px;color:var(--ink-3);margin-left:auto;font-family:var(--mono)}
+
+  /* ---------- legend / how to read ---------- */
+  .reading{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 28px}
+  .reading h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3)}
+  .reading p{margin:0;font-size:13.5px;color:var(--ink-2)}
+  .sev-row{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:13.5px;color:var(--ink-2)}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .dot.hi{background:var(--hi)} .dot.mid{background:var(--mid)} .dot.lo{background:var(--lo)}
+
+  /* ---------- service chips ---------- */
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11.5px;
+    font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;border:1px solid transparent;line-height:1.6}
+  .chip.order{background:color-mix(in srgb,var(--order) 12%,#fff);color:var(--order);border-color:color-mix(in srgb,var(--order) 28%,#fff)}
+  .chip.product{background:color-mix(in srgb,var(--product) 13%,#fff);color:#0a6b62;border-color:color-mix(in srgb,var(--product) 30%,#fff)}
+  .chip.payment{background:color-mix(in srgb,var(--payment) 14%,#fff);color:#a85c06;border-color:color-mix(in srgb,var(--payment) 30%,#fff)}
+  .chip.content{background:color-mix(in srgb,var(--content) 12%,#fff);color:var(--content);border-color:color-mix(in srgb,var(--content) 28%,#fff)}
+  .chip.ext{background:#eef1f6;color:var(--ext);border-color:#dce2ea}
+  .chip.db{background:#f1f0ee;color:#6c6357;border-color:#e3e0da;font-style:normal}
+  .chip.extn{background:#fbeeee;color:#b1361f;border-color:#f3d6cf}
+  .chip .tag{font-weight:500;opacity:.72;font-style:normal}
+
+  /* ---------- hotspots ---------- */
+  .hot{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+  .hcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 15px;
+    border-left:4px solid var(--hi);position:relative}
+  .hcard .ep{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink);word-break:break-word}
+  .hcard .why{font-size:13px;color:var(--ink-2);margin:8px 0 0}
+  .hcard .why b{color:var(--hi)}
+  .rank{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+
+  /* ---------- endpoint rows ---------- */
+  .svc-block{margin-top:8px}
+  .epcard{background:var(--panel);border:1px solid var(--line);border-radius:11px;margin:10px 0;
+    overflow:hidden;display:flex}
+  .stripe{width:4px;flex:none}
+  .stripe.hi{background:var(--hi)} .stripe.mid{background:var(--mid)} .stripe.lo{background:var(--lo)}
+  .epbody{padding:13px 16px;flex:1;min-width:0}
+  .ephead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+  .method{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:var(--ink);
+    padding:1px 6px;border-radius:4px;letter-spacing:.03em}
+  .method.get{background:#1f9d57} .method.post{background:#2563eb}
+  .method.put,.method.patch{background:#e0930a} .method.del{background:#dc2626}
+  .path{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--ink);word-break:break-word}
+  .desc{font-size:12.5px;color:var(--ink-3);margin-left:auto}
+  .chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:11px}
+  .arrow{color:var(--line-2);font-size:13px;flex:none}
+  .note{font-size:12px;color:var(--ink-2);margin-top:9px;padding-left:1px}
+  .note b{color:var(--ink)}
+  .flag{font-family:var(--mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:1px 6px;border-radius:4px;vertical-align:middle}
+  .flag.loop{background:#fbeaea;color:#c02718} .flag.seq{background:#fff3e0;color:#b9760a}
+  .flag.par{background:#e8f5ee;color:#137a44} .flag.event{background:#ede9fb;color:#6d3fc4}
+
+  .collapsed{background:var(--panel-2);border:1px dashed var(--line-2);border-radius:10px;padding:13px 16px;
+    margin:10px 0;font-size:13px;color:var(--ink-2)}
+  .collapsed b{color:var(--ink)}
+
+  /* ---------- downstream key ---------- */
+  .keytbl{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .keywrap{overflow-x:auto}
+  .keytbl th,.keytbl td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  .keytbl th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);background:var(--panel-2);font-weight:600}
+  .keytbl tr:last-child td{border-bottom:none}
+  .keytbl td:first-child{white-space:nowrap}
+  .keytbl .cell-chips{display:flex;flex-wrap:wrap;gap:5px}
+
+  .callout{background:color-mix(in srgb,var(--order) 5%,#fff);border:1px solid color-mix(in srgb,var(--order) 22%,#fff);
+    border-left:4px solid var(--order);border-radius:10px;padding:16px 20px;margin-bottom:18px}
+  .callout p{margin:0;font-size:14px;color:var(--ink-2)}
+  .callout ul{margin:10px 0 0;padding-left:18px}
+  .callout li{font-size:13.5px;color:var(--ink-2);margin:6px 0}
+  .callout code,.keytbl code,.mini code{font-family:var(--mono);font-size:.86em;background:var(--panel-2);
+    padding:1px 4px;border-radius:4px;border:1px solid var(--line)}
+  .kind{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px}
+  .mini{font-size:12px;color:var(--ink-3);margin-top:6px;line-height:1.45}
+  .badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
+  .badge.term{background:#e8f5ee;color:#137a44} .badge.out{background:#fff3e0;color:#b9760a}
+  .badge.untraced{background:#f0f1f4;color:#7e889c}
+  .foot{margin-top:54px;padding-top:18px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--ink-3)}
+  .foot code{font-family:var(--mono);background:var(--panel);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+  @media (max-width:620px){.desc{margin-left:0;flex-basis:100%}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="kicker">Freshket Platform · Service-to-Service Request Topology</p>
+  <h1>Per-Endpoint Dependency Graph</h1>
+  <p class="lede">For each HTTP endpoint across <b>order</b>, <b>product</b>, <b>payment</b> and <b>content</b>, this maps the synchronous downstream calls it makes — which service it hits, how (sequential / parallel / per-item loop), and what those services call in turn. Traced from handler → service layer → <code style="font-family:var(--mono)">thirdparty/</code> HTTP clients in each repo.</p>
+  <div class="meta">
+    <span><b>Scope</b> 4 services, cross-service endpoints</span>
+    <span><b>Method</b> code-level trace (not docs)</span>
+    <span><b>As of</b> 2026-06-25</span>
+  </div>
+</header>
+
+<!-- HOW TO READ -->
+<section style="margin-top:34px">
+  <div class="reading">
+    <div>
+      <h4>Service nodes</h4>
+      <div class="cell-chips" style="display:flex;flex-wrap:wrap;gap:6px">
+        <span class="chip order">order</span>
+        <span class="chip product">product</span>
+        <span class="chip payment">payment</span>
+        <span class="chip content">content</span>
+        <span class="chip ext">other internal</span>
+        <span class="chip extn">external API</span>
+        <span class="chip db">datastore</span>
+      </div>
+      <p style="margin-top:10px">A chip is one downstream hop. Trace its <i>own</i> downstreams in the key at the bottom.</p>
+    </div>
+    <div>
+      <h4>Severity (left stripe)</h4>
+      <div class="sev-row"><span class="dot hi"></span> High fan-out / external blocking / N+1 loop</div>
+      <div class="sev-row"><span class="dot mid"></span> 2–4 cross-service calls or a write loop</div>
+      <div class="sev-row"><span class="dot lo"></span> Single hop or datastore-only</div>
+    </div>
+    <div>
+      <h4>Call-mode flags</h4>
+      <p>
+        <span class="flag par">PAR</span> parallel &nbsp;
+        <span class="flag seq">SEQ</span> sequential &nbsp;
+        <span class="flag loop">×N</span> looped per item &nbsp;
+        <span class="flag event">EVT</span> emits Kafka
+      </p>
+      <p style="margin-top:8px">Pure datastore-only CRUD endpoints are summarized per service rather than listed individually.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOTSPOTS -->
+<section>
+  <div class="h2"><span class="n">A</span><h2>Latency hotspots</h2><span class="sub">deepest / widest request fan-outs</span></div>
+  <div class="hot">
+    <div class="hcard"><span class="rank">#1</span>
+      <div class="ep">POST /bulk-orders <span style="color:var(--ink-3)">(Provider=GENERAL)</span></div>
+      <p class="why">order → <b>itself</b> over HTTP, once per order, <b>serially</b>. Each self-call re-runs the full create-order fan-out (product ×2–3, orderadapter ×3, customer, promotion). In-code <code style="font-family:var(--mono)">// TODO: [Refactor] antipattern</code>. Worst profile in the platform.</p>
+    </div>
+    <div class="hcard"><span class="rank">#2</span>
+      <div class="ep">POST /orders · POST /resources/orders</div>
+      <p class="why">~<b>6–8 sequential</b> cross-service calls per placement: product, orderadapter ×3, customer credit, promotion, + legacy MSSQL/oms-api on the resource path.</p>
+    </div>
+    <div class="hcard"><span class="rank">#3</span>
+      <div class="ep">POST /payments/charges · /webhook/:provider</div>
+      <p class="why">Blocks on a <b>synchronous external gateway</b> round-trip (Omise / TTB / KTB / KBank) on the request path, then can call back into order to void/cancel.</p>
+    </div>
+    <div class="hcard"><span class="rank">#4</span>
+      <div class="ep">GET /posts/:guid/brands &nbsp;(content)</div>
+      <p class="why"><b>N+1 to product</b>: one goroutine + one product API call <b>per brand</b> on the post, unbounded by brand count.</p>
+    </div>
+    <div class="hcard"><span class="rank">#5</span>
+      <div class="ep">GET /pages/:slug &nbsp;(content)</div>
+      <p class="why"><b>Sequential N+1</b>: one Mongo read (+ any post enrichment) per post in the page layout, looped one-by-one.</p>
+    </div>
+    <div class="hcard"><span class="rank">#6</span>
+      <div class="ep">POST /shopping-cart/validate</div>
+      <p class="why">Highest cart read fan-out: product (parallel chunks) + promotion ×2 + delivery slot + ~6 order-table reads + MSSQL restaurant.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ORDER -->
+<section>
+  <div class="h2"><span class="n">B</span><h2><span class="chip order" style="font-size:14px;padding:3px 10px">oms-services-order</span></h2><span class="sub">port 1323 · APP_ORDERDSN</span></div>
+
+  <div class="svc-block">
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/bulk-orders</span><span class="desc">batch B2B order create</span></div>
+      <div class="chain">
+        <span class="chip order">order <span class="tag">self HTTP</span></span><span class="flag loop">×N</span>
+        <span class="arrow">→</span><span class="chip product">product</span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">orderadapter</span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip db">MySQL orders</span>
+        <span class="chip content" style="visibility:hidden">x</span>
+        <span class="flag event">EVT</span><span style="font-family:var(--mono);font-size:11.5px;color:var(--ink-3)">oms.order.created</span>
+      </div>
+      <div class="note"><b>Two paths.</b> Default: product (chunk 20 / conc 50) + orderadapter buyers (chunk 10) fan out in parallel, single batch insert. <b>GENERAL path</b>: loops <code style="font-family:var(--mono)">orderapi.CreateResourceOrder</code> to itself once per order, <b>serially</b> — each re-enters the full create fan-out below.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/orders</span><span class="desc">customer order placement</span></div>
+      <div class="chain">
+        <span class="chip product">product <span class="tag">SKU+price</span></span>
+        <span class="arrow">→</span><span class="chip ext">orderadapter ×3</span>
+        <span class="arrow">→</span><span class="chip ext">customer <span class="tag">credit</span></span>
+        <span class="arrow">→</span><span class="chip ext">promotion</span>
+        <span class="arrow">→</span><span class="chip product">product <span class="tag">quota−</span></span>
+        <span class="arrow">→</span><span class="chip db">MySQL</span>
+        <span class="flag event">EVT</span>
+      </div>
+      <div class="note"><span class="flag seq">SEQ</span> ~6–8 calls, mostly serial: product pricing → orderadapter buyer/seller/items → customer credit-limit → promotion validate → product quota decrement. Emits <code style="font-family:var(--mono)">oms.order.created</code> + UTM track async.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/resources/orders</span><span class="desc">staff / manual order</span></div>
+      <div class="chain">
+        <span class="chip product">product ×2</span>
+        <span class="arrow">→</span><span class="chip extn">fk-web-host <span class="tag">buyer-authz</span></span>
+        <span class="arrow">→</span><span class="chip db">MSSQL restaurant</span>
+        <span class="arrow">→</span><span class="chip ext">orderadapter ×3</span>
+        <span class="arrow">→</span><span class="chip ext">customer</span>
+        <span class="arrow">→</span><span class="chip ext">promotion</span>
+        <span class="arrow">→</span><span class="chip db">MySQL</span>
+        <span class="flag event">EVT</span>
+      </div>
+      <div class="note"><span class="flag seq">SEQ</span> Same as <code style="font-family:var(--mono)">/orders</code> plus legacy buyer-authorize (oms-api) and restaurant read (MSSQL). Target of the bulk GENERAL self-loop.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/resources/orders/:guid/reorder</span><span class="desc">re-purchase past order</span></div>
+      <div class="chain">
+        <span class="chip product">product ×2</span><span class="arrow">→</span><span class="chip ext">orderadapter ×2</span>
+        <span class="arrow">→</span><span class="chip ext">promotion</span><span class="arrow">→</span><span class="chip product">product <span class="tag">quota−</span></span>
+        <span class="arrow">→</span><span class="chip db">MySQL</span><span class="flag event">EVT</span>
+      </div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/shopping-cart/validate</span><span class="desc">pre-checkout validation</span></div>
+      <div class="chain">
+        <span class="chip product">product <span class="tag">SKUs</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">delivery/LMS <span class="tag">slot</span></span>
+        <span class="arrow">→</span><span class="chip ext">promotion ×2</span>
+        <span class="arrow">→</span><span class="chip db">MySQL orders ×6</span>
+        <span class="arrow">→</span><span class="chip db">MSSQL restaurant</span>
+      </div>
+      <div class="note">Highest-read cart endpoint. Product SKUs hydrate in parallel chunks; promotion validate + promo-code are two serial calls; ~6 same-shift/box order reads.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/shopping-cart</span><span class="desc">cart detail w/ pricing + promo</span></div>
+      <div class="chain">
+        <span class="chip product">product <span class="tag">SKUs</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">promotion</span>
+        <span class="arrow">→</span><span class="chip product">product <span class="tag">reward SKUs</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip db">MySQL + MSSQL</span>
+      </div>
+      <div class="note">Shared by <code style="font-family:var(--mono)">POST/PUT/DELETE /shopping-cart</code> and merge — all re-run this full detail build.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/shopping-cart/recommendations</span><span class="desc">similar SKUs for cart</span></div>
+      <div class="chain">
+        <span class="chip product">product <span class="tag">cart SKUs</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">recommendation</span>
+        <span class="arrow">→</span><span class="chip product">product <span class="tag">hydrate</span></span><span class="flag par">PAR</span>
+      </div>
+      <div class="note"><span class="flag seq">SEQ</span> 3-stage chain: product → recommendation (one call w/ all SKU ids) → product hydrate.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method patch">PATCH/POST</span><span class="path">/resources/orders/:guid/skus…</span><span class="desc">add / update / delete order SKUs</span></div>
+      <div class="chain">
+        <span class="chip product">product <span class="tag">quota−</span></span>
+        <span class="arrow">→</span><span class="chip ext">orderadapter</span>
+        <span class="arrow">→</span><span class="chip db">MySQL order_skus</span>
+        <span class="flag event">EVT</span><span style="font-family:var(--mono);font-size:11.5px;color:var(--ink-3)">oms.order.updated</span>
+      </div>
+      <div class="note"><code style="font-family:var(--mono)">…/skus/bulks</code> <span class="flag loop">×N</span> loops a SKU lookup per item. Void / waive-fee / update-info also emit <code style="font-family:var(--mono)">oms.order.updated</code>.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/orders</span><span class="desc">order list</span></div>
+      <div class="chain">
+        <span class="chip db">MySQL orders</span>
+        <span class="arrow">→</span><span class="chip ext">LMS <span class="tag">tracking</span></span><span class="flag loop">×N</span>
+      </div>
+      <div class="note">LMS delivery-tracking is looped per order but soft-fails (non-blocking).</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/admin/rebate/rewards</span><span class="desc">grant rebate rewards</span></div>
+      <div class="chain">
+        <span class="chip payment">payment <span class="tag">GrantCoins</span></span><span class="flag loop">×N</span>
+        <span class="arrow">→</span><span class="chip db">MySQL</span><span class="flag event">EVT</span>
+      </div>
+      <div class="note">Only rebate path that touches payment — coins granted per buyer in a loop. <i>(payment client not re-verified in trace)</i></div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe lo"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/delivery/*</span><span class="desc">dates / time-slots / base-times</span></div>
+      <div class="chain"><span class="chip ext">LMS fulfillment</span></div>
+      <div class="note">Passthrough to LMS; time-slots optionally reads cart + product when shipping-cost filtering is on.</div>
+    </div></div>
+
+    <div class="collapsed">
+      <b>Datastore-only / no cross-service</b> (low severity): <code style="font-family:var(--mono)">POST /calculate</code> (pure in-memory pricing), order reads (<code style="font-family:var(--mono)">GET /orders/:guid</code>, <code style="font-family:var(--mono)">/internal/orders*</code>, <code style="font-family:var(--mono)">/resources/orders/search</code>), cancellations, <code style="font-family:var(--mono)">/orders/pvp-validate</code> (MSSQL), services-fee, region-fee-configs, rebate program/group CRUD (MySQL <code style="font-family:var(--mono)">mass_rebate_*</code> + MSSQL invoices, some per-item loops), <code style="font-family:var(--mono)">/proxy/google/*</code> (→ Google Maps, external), <code style="font-family:var(--mono)">/health</code>.
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCT -->
+<section>
+  <div class="h2"><span class="n">C</span><h2><span class="chip product" style="font-size:14px;padding:3px 10px">oms-services-product</span></h2><span class="sub">port 1323 · APP_PRODUCTDSN</span></div>
+
+  <div class="svc-block">
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/skus/search</span><span class="desc">keyword SKU search</span></div>
+      <div class="chain">
+        <span class="chip extn">Algolia / ES</span><span class="flag seq">SEQ</span>
+        <span class="arrow">→</span><span class="chip extn">Thai tokenizer</span>
+        <span class="arrow">→</span><span class="chip db">Redis cache</span>
+        <span class="arrow">→</span><span class="chip db">MySQL <span class="tag">1 page</span></span>
+        <span class="arrow">→</span><span class="chip ext">promotion <span class="tag">batch/50</span></span>
+      </div>
+      <div class="note">Search returns IDs → <b>one</b> MySQL page query joins prices in-memory (no per-SKU price fetch). Promotion enrichment batched at 50, gated by <code style="font-family:var(--mono)">ENABLED_PROMOTION_API</code>. Two search calls when staged.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/pre-search-recommendations</span><span class="desc">pre-search blocks</span></div>
+      <div class="chain">
+        <span class="chip ext">recommendation</span><span class="flag seq">SEQ</span>
+        <span class="arrow">→</span><span class="chip db">MySQL skus + categories</span><span class="flag par">PAR</span>
+      </div>
+      <div class="note">Recommendation call gates the request; SKU + category fetches per block run in parallel (errgroup), bounded by block count not SKU count.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/skus/:guid/recommendations</span><span class="desc">similar SKUs</span></div>
+      <div class="chain">
+        <span class="chip db">MySQL sponsored</span>
+        <span class="arrow">→</span><span class="chip ext">recommendation</span>
+        <span class="arrow">→</span><span class="chip db">MySQL skus</span>
+        <span class="arrow">→</span><span class="chip ext">promotion <span class="tag">batch/50</span></span>
+      </div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe lo"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/skus &nbsp;·&nbsp; /resources/skus</span><span class="desc">paginated list / filter</span></div>
+      <div class="chain">
+        <span class="chip db">MySQL <span class="tag">prices joined</span></span>
+        <span class="arrow">→</span><span class="chip ext">promotion <span class="tag">batch/50, gated</span></span>
+        <span class="arrow">→</span><span class="chip ext">HRMS <span class="tag">staff auth</span></span>
+      </div>
+      <div class="note">No N+1: single page query, in-memory pricing. HRMS only on resource/admin variants when authorization is required.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe lo"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/suggestions</span><span class="desc">autocomplete</span></div>
+      <div class="chain"><span class="chip extn">Algolia / ES</span><span class="arrow">→</span><span class="chip db">Redis cache</span><span class="arrow">→</span><span class="chip extn">Thai tokenizer</span></div>
+      <div class="note">Search-index only, no MySQL.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe lo"></div><div class="epbody">
+      <div class="ephead"><span class="method put">PUT</span><span class="path">/resources/skus/area-prices</span><span class="desc">area price update</span></div>
+      <div class="chain"><span class="chip db">MySQL prices + history</span><span class="arrow">→</span><span class="chip extn">Braze <span class="tag">best-effort</span></span></div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe lo"></div><div class="epbody">
+      <div class="ephead"><span class="method put">PUT/POST</span><span class="path">/admin/skus/exclusivity-scope</span><span class="desc">visibility scope</span></div>
+      <div class="chain"><span class="chip db">MySQL skus</span><span class="arrow">→</span><span class="chip ext">fulfillment <span class="tag">product-sync</span></span></div>
+      <div class="note">Triggers product-sync to fulfillment (best-effort) when scope changes.</div>
+    </div></div>
+
+    <div class="collapsed">
+      <b>Datastore-only / no cross-service</b>: SKU detail (<code style="font-family:var(--mono)">GET /skus/:guid</code> — optional single promotion call), private-prices CRUD, <code style="font-family:var(--mono)">PATCH /resources/skus*</code> (parallel goroutine writes), substitutes import/export, sponsored-selection, labels (<span class="flag loop">×N</span> write loop), brand / category / product / label / unit CRUD, search clear-cache (Redis), favorite-items (legacy MSSQL), <code style="font-family:var(--mono)">/health</code>. <b>This service emits no Kafka on the HTTP path</b> (consumer-only).
+    </div>
+  </div>
+</section>
+
+<!-- PAYMENT -->
+<section>
+  <div class="h2"><span class="n">D</span><h2><span class="chip payment" style="font-size:14px;padding:3px 10px">oms-service-payment</span></h2><span class="sub">port 1323 · no OpenAPI spec</span></div>
+
+  <div class="svc-block">
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/payments/charges</span><span class="desc">create a charge</span></div>
+      <div class="chain">
+        <span class="chip extn">Omise / TTB / KTB / KBank</span><span class="flag seq">SEQ</span>
+        <span class="arrow">→</span><span class="chip ext">billing <span class="tag">docs</span></span>
+        <span class="arrow">→</span><span class="chip extn">oms-api <span class="tag">receipt</span></span>
+        <span class="arrow">→</span><span class="chip db">MySQL + MSSQL</span>
+        <span class="flag event">EVT</span><span style="font-family:var(--mono);font-size:11.5px;color:var(--ink-3)">payment.transaction</span>
+      </div>
+      <div class="note">One external gateway per request, <b>synchronous on the request path</b> → latency tracks the provider. Event published fire-and-forget (errgroup) on PAID.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/public/payments/webhook/:provider</span><span class="desc">gateway callback (no auth)</span></div>
+      <div class="chain">
+        <span class="chip extn">Omise / TTB <span class="tag">inquiry-back</span></span>
+        <span class="arrow">→</span><span class="chip db">MySQL charges/PT</span>
+        <span class="flag event">EVT</span>
+      </div>
+      <div class="note">Inbound endpoint external gateways hit to confirm a charge / store card. Pending status re-inquires the provider. <code style="font-family:var(--mono)">/public/payments/approve/ktb</code> is the KTB approval callback.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/payments/orders/void</span><span class="desc">void unpaid prepaid orders</span></div>
+      <div class="chain">
+        <span class="chip order">order <span class="tag">VoidOrders + StampCancel</span></span>
+        <span class="arrow">→</span><span class="chip db">MySQL PT + MSSQL inv</span>
+      </div>
+      <div class="note">Calls back into <b>order</b> to cancel — order then runs its own update fan-out + emits <code style="font-family:var(--mono)">oms.order.updated</code>. Same OrderAPI callback used by admin <code style="font-family:var(--mono)">/transactions</code> void-expired path.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST/PUT</span><span class="path">/payments/refunds &nbsp;·&nbsp; /admin/payments/refunds/:guid</span><span class="desc">create / approve refund</span></div>
+      <div class="chain">
+        <span class="chip ext">customer <span class="tag">sync</span></span>
+        <span class="arrow">→</span><span class="chip db">MSSQL → MySQL CN sync</span>
+        <span class="flag event">EVT</span><span style="font-family:var(--mono);font-size:11.5px;color:var(--ink-3)">payment.credit-note</span>
+      </div>
+      <div class="note">Emits <code style="font-family:var(--mono)">payment.credit-note</code> — "refunding" on create, "refunded" on approve.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET/POST</span><span class="path">/payments/omise/cards</span><span class="desc">card list / add / delete</span></div>
+      <div class="chain">
+        <span class="chip extn">Omise <span class="tag">cards API</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">customer <span class="tag">info, if missing</span></span>
+        <span class="arrow">→</span><span class="chip db">MySQL cards</span>
+      </div>
+      <div class="note">List fetches Omise in parallel with local read; add = CreateCustomer + AttachCard (sequential).</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method post">POST</span><span class="path">/admin/payments/customer-groups/:id/search</span><span class="desc">group billing</span></div>
+      <div class="chain"><span class="chip ext">CRM-customer <span class="tag">company ids</span></span><span class="arrow">→</span><span class="chip db">MSSQL inv</span></div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe lo"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/payments/documents/:type/:id/:token</span><span class="desc">invoice / CO PDF (public)</span></div>
+      <div class="chain"><span class="chip extn">legacy intranet PHP <span class="tag">PDF proxy</span></span></div>
+      <div class="note">HMAC-validates token then proxies to the legacy intranet (<code style="font-family:var(--mono)">IntranetDomain</code>) for the rendered PDF.</div>
+    </div></div>
+
+    <div class="collapsed">
+      <b>Datastore-only / no external</b>: charge detail read, payment-method list / toggle, unpaid invoices &amp; available CNs (MSSQL+MySQL reads), refund summary/list, offline-payment admin (MSSQL invoice read/write), credit-note transactions, payment-transaction CRUD (sync MSSQL→MySQL), <b>coins</b> (balance / transactions / earn / expire / redeem — MySQL only), cash-vouchers, receipt (MSSQL), payment-configs, <code style="font-family:var(--mono)">/health</code>. <b>Note:</b> 2C2P &amp; Notification clients are wired but have no endpoint call sites <i>(inferred unused)</i>; <code style="font-family:var(--mono)">billing.*</code> / <code style="font-family:var(--mono)">payment.coin</code> are <b>consumed by the separate kafka-consumer</b>, not these HTTP routes.
+    </div>
+  </div>
+</section>
+
+<!-- CONTENT -->
+<section>
+  <div class="h2"><span class="n">E</span><h2><span class="chip content" style="font-size:14px;padding:3px 10px">oms-services-content</span></h2><span class="sub">port 1323 · MongoDB-backed</span></div>
+
+  <div class="svc-block">
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/posts/:guid/brands</span><span class="desc">brand strip on a post</span></div>
+      <div class="chain">
+        <span class="chip db">MongoDB brands</span>
+        <span class="arrow">→</span><span class="chip product">product <span class="tag">/skus</span></span><span class="flag loop">×N</span>
+      </div>
+      <div class="note"><b>N+1</b>: one goroutine + one product API call <b>per brand</b>, no concurrency cap.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/pages/:slug</span><span class="desc">public page render</span></div>
+      <div class="chain">
+        <span class="chip db">MongoDB pages</span>
+        <span class="arrow">→</span><span class="chip db">MongoDB posts</span><span class="flag loop">×N</span>
+        <span class="arrow">→</span><span class="chip product">product <span class="tag">via post enrich</span></span>
+      </div>
+      <div class="note"><b>Sequential N+1</b>: one post read per layout column, looped one-by-one. Per-post product fan-out is minimal here (no eager-loads passed) but each post is a separate round-trip.</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe hi"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/posts/:guid</span><span class="desc">full post detail</span></div>
+      <div class="chain">
+        <span class="chip db">MongoDB posts</span>
+        <span class="arrow">→</span><span class="chip product">product <span class="tag">SKUs+brands</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">recommendation <span class="tag">if RECOMMENDED</span></span>
+      </div>
+      <div class="note">Up to ~9 parallel association loaders (errgroup); several hit product. Brand loader is the N+1 above. Most enrichment errors are logged-and-swallowed (degrade, not 5xx).</div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/posts/:guid/skus &nbsp;·&nbsp; /cover</span><span class="desc">preview SKUs / cover</span></div>
+      <div class="chain">
+        <span class="chip product">product <span class="tag">chunk 40</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip ext">recommendation <span class="tag">if RECOMMENDED</span></span>
+      </div>
+    </div></div>
+
+    <div class="epcard"><div class="stripe mid"></div><div class="epbody">
+      <div class="ephead"><span class="method get">GET</span><span class="path">/admin/* &nbsp;(posts, pages, banners)</span><span class="desc">backoffice CRUD</span></div>
+      <div class="chain">
+        <span class="chip ext">HRMS <span class="tag">/userinfo + /permissions</span></span><span class="flag par">PAR</span>
+        <span class="arrow">→</span><span class="chip db">MongoDB</span>
+      </div>
+      <div class="note">Every <code style="font-family:var(--mono)">/admin/*</code> Bearer request pays a <b>2-call parallel HRMS auth tax</b> in middleware before the handler. Handlers themselves are Mongo-only (no product enrichment).</div>
+    </div></div>
+
+    <div class="collapsed">
+      <b>Mongo-only / no cross-service</b>: <code style="font-family:var(--mono)">/posts/:guid/{premium-brands,promotions,banners,category-link}</code> (promotion data is mirrored from Kafka into Mongo, read locally), <code style="font-family:var(--mono)">/resources/posts/:guid</code>, <code style="font-family:var(--mono)">/admin/banners</code>, <code style="font-family:var(--mono)">/health</code>. <b>No S3/CDN client</b> (image URLs are plain strings); <b>no Kafka producers</b> on the HTTP path; no calls to order, payment, or legacy oms-api. <i>Doc note: brand / images / term-and-conditions resource routes in the API catalog don't exist as standalone endpoints.</i>
+    </div>
+  </div>
+</section>
+
+<!-- SECOND HOP -->
+<section>
+  <div class="h2"><span class="n">F</span><h2>Second hop — what each downstream calls next</h2><span class="sub">where the request chain ends</span></div>
+
+  <div class="callout">
+    <p><b>The chains are shallow — now fully traced.</b> Every second-hop service either <b>terminates at a datastore</b> or fans out to <b>exactly one external dependency</b>; <b>none call another internal Freshket microservice</b> (except promotion → product). Three things to know:</p>
+    <ul>
+      <li><b>promotion → product</b> is the one genuine internal third hop: validating a promotion calls back into product <code>/skus</code> (chunked-parallel). With product→promotion enrichment, order↔product↔promotion form a small cross-call cluster — no infinite cycle (different operations), but a shared latency surface.</li>
+      <li><b>HRMS → Auth0</b> (not a DB): staff identity / permissions are cache-aside over <b>Auth0</b> (Redis-fronted). So every content <code>/admin/*</code> request ultimately depends on Auth0 being up.</li>
+      <li><b>Legacy MSSQL is the convergence point.</b> order, payment, orderadapter <i>and</i> customer all read it directly (in-process GORM / ACL, not over HTTP). It's the most depended-on single resource in this slice.</li>
+    </ul>
+    <p style="margin-top:10px"><b>Correction to hop 1:</b> the order "buyer-authorize" edge labelled <i>oms-api</i> actually targets <code>fk-web-host</code> (a separate legacy MVC web app), not the oms-api service.</p>
+  </div>
+
+  <div class="keywrap">
+  <table class="keytbl">
+    <thead><tr><th>2nd-hop node</th><th>For the ops hop-1 calls, it calls…</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip ext">promotion</span><div class="kind">NestJS · MySQL <code>oms_promotion</code></div></td>
+        <td><div class="cell-chips"><span class="chip product">product <span class="tag">/skus, chunk 40</span></span><span class="flag par">PAR</span><span class="chip db">MySQL oms_promotion</span></div>
+          <div class="mini">Validate &amp; promo-code both call product; SKU-enrichment path is DB-only.</div></td>
+        <td><span class="badge out">fans out → product</span></td></tr>
+
+      <tr><td><span class="chip ext">orderadapter</span><div class="kind">NestJS · MSSQL legacy</div></td>
+        <td><div class="cell-chips"><span class="chip db">MSSQL legacy</span></div>
+          <div class="mini">FindMany/FindOne buyer·seller·items are pure MSSQL reads. (CRM + oms-api calls exist only on its write/Kafka paths, not these reads.)</div></td>
+        <td><span class="badge term">terminal</span></td></tr>
+
+      <tr><td><span class="chip ext">customer</span><div class="kind">cms-services-customer · Go</div></td>
+        <td><div class="cell-chips"><span class="chip db">MySQL CIMS</span><span class="chip db">MSSQL legacy <span class="tag">ACL</span></span></div>
+          <div class="mini">CheckCredit computes availability in-process from legacy <code>inv</code>/<code>po</code>; GetInfo/KYC are DB-only. No service hop.</div></td>
+        <td><span class="badge term">terminal</span></td></tr>
+
+      <tr><td><span class="chip ext">recommendation</span><div class="kind">oms-services-recommendation · Go</div></td>
+        <td><div class="cell-chips"><span class="chip db">Redis</span><span class="chip db">in-memory</span><span class="chip extn">S3 <span class="tag">boot only</span></span></div>
+          <div class="mini">Serves precomputed results; returns bare SKU IDs. Never calls product back, no ML endpoint.</div></td>
+        <td><span class="badge term">leaf</span></td></tr>
+
+      <tr><td><span class="chip ext">HRMS</span><div class="kind">hrms-services-v2 · TS/Lambda</div></td>
+        <td><div class="cell-chips"><span class="chip extn">Auth0 <span class="tag">Mgt API + JWKS</span></span><span class="flag par">PAR</span><span class="chip db">Redis cache</span></div>
+          <div class="mini">Cache-aside: Redis → Auth0 on miss. Identity lives in <b>Auth0, not an HRMS DB</b> on this path. (DynamoDB exists but other features only.)</div></td>
+        <td><span class="badge out">fans out → Auth0</span></td></tr>
+
+      <tr><td><span class="chip ext">CRM-customer</span><div class="kind">crm-customer-services · Go/Echo</div></td>
+        <td><div class="cell-chips"><span class="chip db">MySQL <code>companies</code></span><span class="chip db">MySQL <code>customers</code></span></div>
+          <div class="mini">GetCompanyCustomerIDs = two sequential reads on its own CRM MySQL. No downstream service, no Kafka. (MoEngage/Braze integrations are on other paths.)</div></td>
+        <td><span class="badge term">terminal</span></td></tr>
+
+      <tr><td><span class="chip extn">oms-api</span><div class="kind">legacy .NET · MSSQL (EF6)</div></td>
+        <td><div class="cell-chips"><span class="chip db">MSSQL <span class="tag">Payment_Tran, INV, Receipt…</span></span><span class="chip extn">Mandrill <span class="tag">email</span></span><span class="chip extn">CloudWatch</span></div>
+          <div class="mini"><code>CreateReceipt</code> (<code>/Paid</code>) = MSSQL business state + 3rd-party email; no other microservice, no queue.</div></td>
+        <td><span class="badge out">MSSQL + email</span></td></tr>
+
+      <tr><td><span class="chip extn">fk-web-host</span><div class="kind">legacy MVC web app</div></td>
+        <td><div class="cell-chips"><span class="chip ext">separate deployable <i>(not in repo)</i></span></div>
+          <div class="mini"><b>Correction:</b> order's "buyer-authorize" call (<code>/api/authorize/intranet</code>) hits <code>fk-web-host</code>, <b>not</b> oms-api — a different legacy app. Route absent from the oms-api codebase.</div></td>
+        <td><span class="badge untraced">separate app</span></td></tr>
+
+      <tr><td><span class="chip ext">billing / LMS</span><div class="kind">not in workspace</div></td>
+        <td><div class="cell-chips"><span class="chip ext">repo not cloned</span></div>
+          <div class="mini">billing/finance &amp; LMS/fulfillment repos aren't present locally — chains end at this boundary.</div></td>
+        <td><span class="badge untraced">out of scope</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="mini" style="margin-top:12px">External APIs (Algolia/ES, Thai tokenizer, Braze, Omise/TTB/KTB/KBank, legacy intranet PHP, Google Maps, S3) are leaves by definition — no further internal hop.</p>
+</section>
+
+<div class="foot">
+  Traced from handler → service → <code>thirdparty/</code> HTTP clients in each repo (June 2026). Hop 1 (order, product, payment, content) and hop 2 (promotion, orderadapter, customer, recommendation, HRMS, CRM-customer, oms-api) are all code-verified. billing/finance and LMS/fulfillment repos are not in this workspace, so those edges end at the boundary. Stack corrections found while tracing: hrms-services-v2 is TypeScript/Lambda (not Go), crm-customer-services uses Echo (not Fiber), and the order "buyer-authorize" edge targets <code>fk-web-host</code> (legacy MVC), not oms-api. Call counts, parallel/sequential and per-item loop classifications are code-verified; a few <code>order_service.go</code> line numbers were approximate. Items marked <i>(inferred)</i> / <i>(assumed)</i> were not confirmed in code. Service env mapping: <code>APP_PRODUCTDSN</code>, <code>APP_PROMOTIONDSN</code>, <code>APP_CUSTOMERDSN</code>, <code>APP_RECOMMENDDSN</code>, <code>APP_FULFILLMENTDSN</code>, <code>APP_ORDERADAPTERDSN</code>, <code>APP_LEGACYWEBMVCDSN</code>, <code>APP_ORDERDSN</code> (order self).
+</div>
+</div>

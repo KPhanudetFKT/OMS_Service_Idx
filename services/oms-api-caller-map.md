@@ -1,7 +1,7 @@
 # oms-api Caller Map
 
 Scope: all 86 repos in the `freshket` GitHub organization + local monorepo.
-Source: controller inspection of `/Users/freshket/projects/oms-api/FreshKetApi/Controllers/` + GitHub code search.
+Source: controller inspection of `oms-api/FreshKetApi/Controllers/` (repo-relative) + GitHub code search.
 
 **Total endpoints: ~175 across 26 controllers**
 **Endpoints with active microservice callers: 8**
